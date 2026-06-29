@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia', // Use latest stable version
+  apiVersion: '2026-06-24.dahlia',
 });
 
 export async function POST(req: Request) {
@@ -29,26 +29,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid plan selected' }, { status: 400 });
     }
 
-    // Get or create Stripe customer
+    // Get or create user
     let user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: { subscription: true },
     });
 
-    let customerId = user?.subscription?.stripeCustomerId;
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email: session.user.email,
+          name: session.user.name ?? undefined,
+          image: session.user.image ?? undefined,
+        },
+        include: { subscription: true },
+      });
+    }
+
+    let customerId = user.subscription?.stripeCustomerId;
 
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: session.user.email,
-        metadata: { userId: user?.id },
+        email: user.email,
+        metadata: { userId: user.id },
       });
       customerId = customer.id;
 
       // Update user subscription with customerId
       await prisma.subscription.upsert({
-        where: { userId: user!.id },
+        where: { userId: user.id },
         update: { stripeCustomerId: customerId },
-        create: { userId: user!.id, stripeCustomerId: customerId },
+        create: { userId: user.id, stripeCustomerId: customerId },
       });
     }
 
@@ -65,7 +76,7 @@ export async function POST(req: Request) {
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/#plans`,
       metadata: {
-        userId: user!.id,
+        userId: user.id,
         planType: plan,
       },
     });

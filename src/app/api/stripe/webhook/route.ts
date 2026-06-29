@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2026-06-24.dahlia',
 });
 
 export async function POST(req: Request) {
@@ -54,7 +54,9 @@ export async function POST(req: Request) {
         where: { stripeSubscriptionId: subscription.id },
         data: {
           status: subscription.status === 'active' ? 'ACTIVE' : 'PAST_DUE',
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodEnd: new Date(
+  (subscription as any).current_period_end * 1000
+),
         },
       });
       break;
