@@ -6,11 +6,12 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-06-24.dahlia',
-});
-
 export async function POST(req: Request) {
+  // Initialize Stripe inside the handler to avoid top-level crashes during build
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2026-06-24.dahlia',
+  });
+
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {

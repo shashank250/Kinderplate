@@ -4,11 +4,12 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-06-24.dahlia',
-});
-
 export async function POST(req: Request) {
+  // Initialize Stripe inside the handler to avoid top-level crashes during build
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2026-06-24.dahlia',
+  });
+
   const body = await req.text();
   const sig = req.headers.get('stripe-signature')!;
 

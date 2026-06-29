@@ -4,15 +4,30 @@ import { Pool } from 'pg';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-const connectionString = process.env.DATABASE_URL as string;
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
+let _instance: PrismaClient | undefined;
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    adapter,
-    log: ['query'],
-  });
+function createInstance() {
+  const connectionString = process.env.DATABASE_URL as string;
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+  if (!connectionString) {
+    // Return a dummy object during build time to prevent crashing
+    return {} as PrismaClient;
+  }
+
+  const pool = new Pool({ connectionString });
+  const adapter = new PrismaPg(pool);
+  const client = new PrismaClient({ adapter, log: ['query'] });
+  return client;
+}
+
+export const prisma = new Proxy({} as PrismaClient, {
+  get(target, prop, receiver) {
+    if (!_instance) {
+      _instance = globalForPrisma.prisma || createInstance();
+      if (process.env.NODE_ENV !== 'production') {
+        globalForPrisma.prisma = _instance;
+      }
+    }
+    return Reflect.get(_instance, prop, receiver);
+  }
+});
