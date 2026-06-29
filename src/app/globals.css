@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  --background: #FDFBF7; /* Cream White */
+  --foreground: #2D5A27; /* Forest Green */
+
+  --color-forest-green: #2D5A27;
+  --color-coral: #FF7F50;
+  --color-cream-white: #FDFBF7;
+
+  --font-header: "Cambria", "Georgia", serif;
+  --font-body: "Calibri", "Arial", sans-serif;
+
+  /* 3D UI Depth Shadows */
+  --shadow-3d: 0 10px 25px -5px rgba(45, 90, 39, 0.1), 0 8px 10px -6px rgba(45, 90, 39, 0.1);
+  --shadow-3d-hover: 0 20px 35px -10px rgba(45, 90, 39, 0.15), 0 12px 15px -8px rgba(45, 90, 39, 0.15);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-forest-green: var(--color-forest-green);
+  --color-coral: var(--color-coral);
+  --color-cream-white: var(--color-cream-white);
+
+  --font-header: var(--font-header);
+  --font-body: var(--font-body);
+
+  --shadow-3d: var(--shadow-3d);
+  --shadow-3d-hover: var(--shadow-3d-hover);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-header);
+  font-weight: 700;
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: rgba(253, 251, 247, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
