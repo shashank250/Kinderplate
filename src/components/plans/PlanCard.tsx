@@ -31,7 +31,8 @@ export default function PlanCard({ plan }: PlanCardProps) {
 
       const { url } = await res.json();
       window.location.href = url;
-    } catch (err) {
+    } catch (error) {
+      console.error('Checkout error:', error);
       alert('Checkout failed. Please try again or login first.');
     } finally {
       setIsLoading(false);

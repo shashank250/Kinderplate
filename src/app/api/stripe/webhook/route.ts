@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const body = await req.text();
   const sig = req.headers.get('stripe-signature')!;
 
-  let event;
+  let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(
@@ -18,8 +18,9 @@ export async function POST(req: Request) {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err: any) {
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: `Webhook Error: ${errorMessage}` }, { status: 400 });
   }
 
   const session = event.data.object as Stripe.Checkout.Session;
@@ -27,20 +28,20 @@ export async function POST(req: Request) {
   switch (event.type) {
     case 'checkout.session.completed': {
       const userId = session.metadata?.userId;
-      const planType = session.metadata?.planType;
+      const planType = session.metadata?.planType as any;
       const subscriptionId = session.subscription as string;
 
       if (userId && planType) {
         await prisma.subscription.upsert({
           where: { userId },
           update: {
-            planType: planType as any,
+            planType,
             status: 'ACTIVE',
             stripeSubscriptionId: subscriptionId,
           },
           create: {
             userId,
-            planType: planType as any,
+            planType,
             status: 'ACTIVE',
             stripeSubscriptionId: subscriptionId,
           },
@@ -50,15 +51,18 @@ export async function POST(req: Request) {
     }
     case 'customer.subscription.updated': {
       const subscription = event.data.object as Stripe.Subscription;
-      await prisma.subscription.update({
-        where: { stripeSubscriptionId: subscription.id },
-        data: {
-          status: subscription.status === 'active' ? 'ACTIVE' : 'PAST_DUE',
-          currentPeriodEnd: new Date(
-  (subscription as any).current_period_end * 1000
-),
-        },
-      });
+      // In Stripe SDK v22+, current_period_end is on the subscription items
+      const periodEnd = subscription.items.data[0]?.current_period_end;
+
+      if (periodEnd) {
+        await prisma.subscription.update({
+          where: { stripeSubscriptionId: subscription.id },
+          data: {
+            status: subscription.status === 'active' ? 'ACTIVE' : 'PAST_DUE',
+            currentPeriodEnd: new Date(periodEnd * 1000),
+          },
+        });
+      }
       break;
     }
     case 'customer.subscription.deleted': {

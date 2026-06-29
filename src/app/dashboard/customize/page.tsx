@@ -35,7 +35,7 @@ export default function CustomizePage() {
       <form className="space-y-8 bg-white p-8 rounded-3xl shadow-sm border border-zinc-200">
         <div className="grid md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
-            <label className="font-header font-bold text-forest-green">Child's Name</label>
+            <label className="font-header font-bold text-forest-green">Child&apos;s Name</label>
             <input
               type="text"
               value={formData.childName}
